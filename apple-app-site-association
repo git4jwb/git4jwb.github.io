@@ -1,0 +1,11 @@
+{
+    "applinks": {
+            "apps": [],
+            "details": [
+                {
+                    "appID": "BUK5TA8B48.cn.teld.test",
+                    "paths": ["*"]
+                }
+            ]
+    }
+}
