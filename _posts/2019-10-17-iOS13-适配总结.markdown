@@ -1,0 +1,87 @@
+## 1. 暗黑模式
+iOS13使用暗黑模式时，UIView默认背景色会变成暗黑色。适配暗黑模式的工作量较大，改为强制使用正常模式。
+处理方案：在plist文件中增加配置项UIUserInterfaceStyle，值为Light。
+## 2. 状态栏样式
+在iOS13之前有两种状态：UIStatusBarStyleDefault（黑字）、UIStatusBarStyleLightContent（白字）。
+在iOS13改为三种状态：UIStatusBarStyleDefault（自动选择黑字or白字）、UIStatusBarStyleDarkContent（黑字）、UIStatusBarStyleLightContent（白字）
+处理方案：使用黑字样式时，低于iOS13的系统上使用default，iOS13之后使用darkContent。黑色样式使用宏定义来处理
+
+```
+/// 黑色字体的状态栏
+#ifdef __IPHONE_13_0
+    #define TLDStatusBarStyleDark   \
+    ({\
+    UIStatusBarStyle darkStyle = UIStatusBarStyleDefault;\
+    if (@available(iOS 13, *)) {\
+        darkStyle = UIStatusBarStyleDarkContent;\
+    }\
+    (darkStyle);\
+    })
+#else
+    #define TLDStatusBarStyleDark (UIStatusBarStyleDefault)
+#endif
+```
+## 3. 模态弹出默认样式改变
+在iOS上默认样式由`UIModalPresentationFullScreen` 改为`UIModalPresentationAutomatic`，对于大部分 UIViewController，会自动映射为`UIModalPresentationPageSheet`。
+处理方案：
+- 在基类控制器初始化时指定`modalPresentationStyle`为`UIModalPresentationFullScreen`,
+- 全局搜索`presentViewController:animated:completion:`方法，将未使用基类的控制器指定相应的style
+- 升级图片选择库，修改图片选择库中的`modalPresentationStyle`
+
+## 4. 蓝牙权限更新
+上传App Store时，如果引用了CoreBluetooth.framework，则需要添加描述配置`NSBluetoothAlwaysUsageDescription`，否则无法提交。旧版本的个推SDK引入时依赖CoreBluetooth，后续版本已修改不再依赖CoreBluetooth。
+处理方案：检查其他第三方库并未依赖CoreBluetooth.framework，删除对该库的引用。
+
+## 5. 彻底废弃`UISearchDisplayController`、`MPMoviePlayerController`
+Xcode11编译的安装包使用UISearchDisplayController和MPMoviePlayerController时会崩溃
+处理方案：
+1、使用UISearchController替代UISearchDisplayController
+2、检查工程中并未使用MPMoviePlayerController
+
+## 6. UIScrollView 滚动条异常偏移
+iOS13上新增属性`automaticallyAdjustsScrollIndicatorInsets`，默认值为YES，会导致适配iPhone X时设置了偏移量的滚动条偏移两倍
+处理方案：在设置了滚动条偏移量的位置将新增属性`automaticallyAdjustsScrollIndicatorInsets`设置为NO
+
+## 7. 废弃UIWebview改为WKWebView
+暂时没有强制修改，但是已经发邮件提示
+处理方案：尽快替换一下
+
+## 8. LaunchImage修改为LaunchScreen
+从2020年4月开始，所有支持 iOS 13 的 App 必须提供 LaunchScreen.storyboard，否则将无法提交到 App Store 进行审批。
+处理方案：尽快替换一下
+
+## 9. DeviceToken 无法通过description方法来获取到了
+处理方案：由个推SDK来兼容处理
+
+## 10. KVC限制
+在iOS13上通过KVC来修改系统API私有属性时会报错
+```
+*** Terminating app due to uncaught exception 'NSGenericException', reason: 'Access to xxx's _xxx ivar is prohibited. This is an application bug'
+```
+处理方案：
+1、全局搜索KVC的使用方法，未发现使用KVC方式修改私有属性的代码
+2、平时开发时注意KVC的使用
+
+## 11. UIActivityIndicatorView 菊花loading的样式类型修改
+```
+typedef NS_ENUM(NSInteger, UIActivityIndicatorViewStyle) {
+    UIActivityIndicatorViewStyleMedium  API_AVAILABLE(ios(13.0), tvos(13.0)) = 100,
+    UIActivityIndicatorViewStyleLarge   API_AVAILABLE(ios(13.0), tvos(13.0)) = 101,
+    
+    UIActivityIndicatorViewStyleWhiteLarge API_DEPRECATED_WITH_REPLACEMENT("UIActivityIndicatorViewStyleLarge", ios(2.0, 13.0), tvos(9.0, 13.0)) = 0,
+    UIActivityIndicatorViewStyleWhite API_DEPRECATED_WITH_REPLACEMENT("UIActivityIndicatorViewStyleMedium", ios(2.0, 13.0), tvos(9.0, 13.0)) = 1,
+    UIActivityIndicatorViewStyleGray API_DEPRECATED_WITH_REPLACEMENT("UIActivityIndicatorViewStyleMedium", ios(2.0, 13.0)) API_UNAVAILABLE(tvos) = 2,
+};
+```
+如果使用iOS13上新增的样式枚举时，是通过color属性来设置颜色，而且要注意在iOS12及以下的兼容处理。
+处理方案：因为app现在支持到iOS8，所以建议还是使用旧的枚举值
+
+## 12. 第三方登录支持苹果登录（Sign In with Apple）
+苹果更新了审核指南，要求所有专门使用第三方登录的App，2020 年 4 月之前，都必须接入 Sign in with Apple。符合以下条件的App，可以不接入：
+- 使用自建账户和登录系统；
+- 要求用户使用现有的教育或企业账户登录的教育、企业或商业类应用；
+- 使用政府或行业支持的公民身份识别系统或电子 ID 来验证用户；
+- 应用特定于第三方服务，用户需要使用邮箱、社交媒体或其它第三方账户才能访问其内容的应用；
+处理方案：暂不确定是否需要接入苹果登录，继续跟踪
+
+
