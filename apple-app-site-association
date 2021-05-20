@@ -4,10 +4,10 @@
             "details": [
                 {
                     "appID": "2LBAGA9538.cn.teld.app.huataiyi",
-                    "paths": ["/app/ejc/*"]
+                    "paths": ["*"]
                 },{
                     "appID": "BUK5TA8B48.cn.teld.test.xinjiang",
-                    "paths": ["/app/ejc/*"]
+                    "paths": ["*"]
                 }
             ]
     }
